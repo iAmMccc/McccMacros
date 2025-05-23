@@ -11,7 +11,6 @@ import SwiftSyntaxMacros
 @main
 struct McccMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        StringifyMacro.self,
         UserDefaultMacro.self,
     ]
 }

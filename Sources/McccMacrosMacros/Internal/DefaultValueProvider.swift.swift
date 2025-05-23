@@ -8,12 +8,12 @@
 import Foundation
 import SwiftSyntax
 
-
+/// 提供默认值推导逻辑
 public enum DefaultValueProvider {
     /// 推导默认值表达式（用于宏中展开）
     public static func defaultValueCode(for type: TypeSyntax) -> String? {
         // Optional 类型：直接返回 nil
-        if let optional = type.as(OptionalTypeSyntax.self) {
+        if type.as(OptionalTypeSyntax.self) != nil {
             return "nil"
         }
 

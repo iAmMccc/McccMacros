@@ -9,66 +9,46 @@ import XCTest
 import McccMacrosMacros
 
 let testMacros: [String: Macro.Type] = [
-    "stringify": StringifyMacro.self,
     "UserDefault": UserDefaultMacro.self,
 ]
 #endif
 
 final class McccMacrosTests: XCTestCase {
-    func testMacro() throws {
-        #if canImport(McccMacrosMacros)
-        assertMacroExpansion(
-            """
-            #stringify(a + b)
-            """,
-            expandedSource: """
-            (a + b, "a + b")
-            """,
-            macros: testMacros
-        )
-        #else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
-    }
-
-    func testMacroWithStringLiteral() throws {
-        #if canImport(McccMacrosMacros)
-        assertMacroExpansion(
-            #"""
-            #stringify("Hello, \(name)")
-            """#,
-            expandedSource: #"""
-            ("Hello, \(name)", #""Hello, \(name)""#)
-            """#,
-            macros: testMacros
-        )
-        #else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
-    }
+    
     
     func testMacroWithUserDefault() throws {
         #if canImport(McccMacrosMacros)
         assertMacroExpansion(
             #"""
-            struct Settings {
-                @UserDefault(forKey: "kkkkkkk")
-                var username: String = "Mccc111"
+            struct Setting {
+                
+                @UserDefault
+                var name: String = "Mccc"
+
+                @UserDefault(forKey: "customKey")
+                var age: Int = 111
             }
             """#,
             expandedSource: #"""
-            struct Settings {
-                var username: String
-                {
+            struct Setting {
+
+                var name: String {
                     get {
-                        (UserDefaults.standard.value(forKey: "username") as? String)!
+                        UserDefaults.standard.value(forKey: "name") as? String ?? "Mccc"
                     }
                     set {
-                        UserDefaults.standard.setValue(newValue, forKey: "username")
+                        UserDefaults.standard.setValue(newValue, forKey: "name")
+                    }
+                }
+                var age: Int {
+                    get {
+                        UserDefaults.standard.value(forKey: "customKey") as? Int ?? 111
+                    }
+                    set {
+                        UserDefaults.standard.setValue(newValue, forKey: "customKey")
                     }
                 }
             }
-
             """#,
             macros: testMacros
         )

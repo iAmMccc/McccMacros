@@ -24,13 +24,13 @@ public struct UserDefaultMacro: AccessorMacro {
               let name = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
               let typeSyntax = binding.typeAnnotation?.type
         else {
-            throw ASTError("UserDefault can only be applied to variables with explicit type")
+            throw ASTError.variableRequiresExplicitType
         }
         
 
         let saveKey = extractUserDefaultKey(from: node, fallback: name)
         
-        let (isOptional, type) = unwrapOptionalType(from: typeSyntax)
+        let (isOptional, type) = TypeHelpers.unwrapOptionalType(from: typeSyntax)
 
         let getter: AccessorDeclSyntax
         /// 是否可选类型
@@ -41,7 +41,7 @@ public struct UserDefaultMacro: AccessorMacro {
             }
             """
         } else {
-            let defaultValue = try extractDefaultValue(from: binding, propertyName: name, typeSyntax: typeSyntax)
+            let defaultValue = try PropertyResolver.defaultValue(for: binding, typeSyntax: typeSyntax)
             getter = """
             get {
                 UserDefaults.standard.value(forKey: "\(raw: saveKey)") as? \(raw: type) ?? \(raw: defaultValue)
@@ -61,15 +61,6 @@ public struct UserDefaultMacro: AccessorMacro {
         return [getter, setter]
     }
     
-    
-    private static func unwrapOptionalType(from typeSyntax: TypeSyntax) -> (isOptional: Bool, typeDescription: String) {
-        if let optional = typeSyntax.as(OptionalTypeSyntax.self) {
-            return (true, optional.wrappedType.trimmedDescription)
-        } else {
-            return (false, typeSyntax.trimmedDescription)
-        }
-    }
-    
     /// 获取存储的key
     static func extractUserDefaultKey(from node: AttributeSyntax, fallback proertyName: String) -> String {
         guard let arguments = node.arguments?.as(LabeledExprListSyntax.self) else { return proertyName }
@@ -82,28 +73,6 @@ public struct UserDefaultMacro: AccessorMacro {
             }
         }
         return proertyName
-    }
-    
-    
-    /// 获取默认值
-    static func extractDefaultValue(
-        from binding: PatternBindingSyntax,
-        propertyName: String,
-        typeSyntax: TypeSyntax
-    ) throws -> String {
-        // 1. 先尝试从属性默认值中获取
-        if let initializer = binding.initializer {
-            let valueSyntax = initializer.value
-            return valueSyntax.trimmedDescription
-        }
-
-        // 2. 再尝试从全局默认值提供者获取
-        if let fallback = DefaultValueProvider.defaultValueCode(for: typeSyntax) {
-            return fallback
-        }
-
-        // 3. 两者都没有，抛异常
-        throw ASTError("Missing value for non-optional UserDefault key '\(propertyName)', and no default value can be inferred for type '\(typeSyntax)'.")
     }
 }
 
