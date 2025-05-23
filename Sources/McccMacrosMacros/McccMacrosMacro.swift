@@ -25,9 +25,3 @@ public struct StringifyMacro: ExpressionMacro {
     }
 }
 
-@main
-struct McccMacrosPlugin: CompilerPlugin {
-    let providingMacros: [Macro.Type] = [
-        StringifyMacro.self,
-    ]
-}

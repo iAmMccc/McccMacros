@@ -10,6 +10,7 @@ import McccMacrosMacros
 
 let testMacros: [String: Macro.Type] = [
     "stringify": StringifyMacro.self,
+    "UserDefault": UserDefaultMacro.self,
 ]
 #endif
 
@@ -38,6 +39,36 @@ final class McccMacrosTests: XCTestCase {
             """#,
             expandedSource: #"""
             ("Hello, \(name)", #""Hello, \(name)""#)
+            """#,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+    
+    func testMacroWithUserDefault() throws {
+        #if canImport(McccMacrosMacros)
+        assertMacroExpansion(
+            #"""
+            struct Settings {
+                @UserDefault(forKey: "kkkkkkk")
+                var username: String = "Mccc111"
+            }
+            """#,
+            expandedSource: #"""
+            struct Settings {
+                var username: String
+                {
+                    get {
+                        (UserDefaults.standard.value(forKey: "username") as? String)!
+                    }
+                    set {
+                        UserDefaults.standard.setValue(newValue, forKey: "username")
+                    }
+                }
+            }
+
             """#,
             macros: testMacros
         )
